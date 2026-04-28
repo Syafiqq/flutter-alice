@@ -44,9 +44,13 @@ class _AliceCallDetailsScreenState extends State<AliceCallDetailsScreen>
         initialData: [widget.call],
         builder: (context, callsSnapshot) {
           if (callsSnapshot.hasData) {
-            AliceHttpCall? call = callsSnapshot.data?.firstWhere(
-                (snapshotCall) => snapshotCall.id == widget.call.id,
-                orElse: null);
+            AliceHttpCall? call;
+            for (final snapshotCall in callsSnapshot.data ?? const []) {
+              if (snapshotCall.id == widget.call.id) {
+                call = snapshotCall;
+                break;
+              }
+            }
             if (call != null) {
               return _buildMainWidget();
             } else {
@@ -71,12 +75,15 @@ class _AliceCallDetailsScreenState extends State<AliceCallDetailsScreen>
           ),
           key: Key('share_key'),
           onPressed: () async {
+            final sharableResponse = await _getSharableResponseString();
             await Clipboard.setData(
-              ClipboardData(text: await _getSharableResponseString()),
+              ClipboardData(text: sharableResponse),
             );
-            Share.share(
-              await _getSharableResponseString(),
-              subject: 'Request Details',
+            await SharePlus.instance.share(
+              ShareParams(
+                text: sharableResponse,
+                subject: 'Request Details',
+              ),
             );
           },
           child: Icon(Icons.share, color: Colors.white),
